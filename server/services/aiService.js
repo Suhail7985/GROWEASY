@@ -61,7 +61,7 @@ You will receive a JSON array of messy objects (rows from a CSV). Return a corre
 async function processBatch(batch) {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-pro',
+      model: 'gemini-2.5-flash',
       contents: JSON.stringify(batch),
       config: {
         systemInstruction,
@@ -71,7 +71,7 @@ async function processBatch(batch) {
       }
     });
 
-    const parsedResponse = JSON.parse(response.text());
+    const parsedResponse = JSON.parse(response.text);
     return parsedResponse;
   } catch (error) {
     console.error("Error processing batch with AI:", error);

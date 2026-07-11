@@ -7,8 +7,10 @@ const { processRecordsWithAI } = require("../services/aiService");
 
 const router = express.Router();
 
-// Setup Multer for file uploads (storing in memory or temp dir)
-const upload = multer({ dest: "uploads/" });
+const os = require("os");
+
+// Setup Multer for file uploads (using OS temp directory for Vercel support)
+const upload = multer({ dest: os.tmpdir() });
 
 router.post("/", upload.single("file"), (req, res) => {
   if (!req.file) {

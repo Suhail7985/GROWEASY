@@ -16,6 +16,12 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is healthy" });
 });
 
-app.listen(port, () => {
+const http = require("http");
+const server = http.createServer(app);
+
+server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+// Required for Vercel deployment
+module.exports = app;
