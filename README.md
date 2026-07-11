@@ -1,47 +1,114 @@
+<div align="center">
+  
 # 🚀 GrowEasy AI-Powered CSV Importer
 
-An intelligent, full-stack CRM data ingestion tool built to effortlessly map messy, unstructured CSV exports (from Facebook Ads, Google Ads, custom spreadsheets, etc.) into a strict, standardized CRM schema using Google's Gemini AI.
+**An intelligent, full-stack CRM data ingestion pipeline built to map messy, unstructured CSV exports into a strict, standardized CRM schema using Google's Gemini AI.**
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-groweasy--hfzn.vercel.app-f97316?style=for-the-badge)](https://groweasy-hfzn.vercel.app/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Gemini](https://img.shields.io/badge/Gemini_AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
+
+</div>
 
 ---
 
-## ✨ Features
+## 📖 Overview
 
-- **Intelligent Data Mapping:** Uses `gemini-2.5-flash` with structured outputs to automatically map varying column headers and layouts to exact CRM fields.
-- **Graceful Error Handling:** Automatically skips records missing critical information (e.g., both Email and Mobile Number missing) and provides clear reasoning.
-- **Modern Premium UI:** Built with Next.js, featuring glassmorphism, micro-animations, drag-and-drop file uploads, and a highly polished UI.
-- **Fast & Scalable:** Processes records in batches to ensure high accuracy while respecting API limits.
+Uploading external lead data (from Facebook Ads, Google Ads, or custom Excel sheets) into a CRM is historically a painful process requiring manual column mapping. 
 
-## 🛠 Tech Stack
+This application solves that problem by using **Large Language Models (LLMs)** to automatically interpret, clean, and map custom CSV columns into a strict CRM schema, completely removing the need for manual user mapping.
 
-**Frontend:**
-- Next.js (React)
-- Vanilla CSS (with modern aesthetic principles)
-- PapaParse (for client-side CSV parsing)
-- Lucide React (for iconography)
-
-**Backend:**
-- Node.js & Express
-- `@google/genai` (Official Google Gemini SDK)
-- Multer (File uploads, configured for Vercel serverless support)
-- CSV-Parser
+### ✨ Key Features
+- **Zero-Config Uploads:** Users simply drag & drop *any* CSV file. No manual column mapping required.
+- **Intelligent LLM Extraction:** Uses Google's `gemini-2.5-flash` to contextually understand headers and row data.
+- **Graceful Error Handling:** Automatically skips records missing critical identifiers (e.g., missing *both* Email and Mobile Number).
+- **Premium UI/UX:** Glassmorphic UI, micro-animations, and a responsive data table for previewing and reviewing AI results.
 
 ---
 
-## 🏗 Architecture & Flow
+## 🏗 Architecture & Workflow
 
-1. **Upload:** User drops a CSV file into the frontend via a polished Drag & Drop interface.
-2. **Preview:** The frontend uses `papaparse` to instantly preview the raw data in a native HTML table (capped at 100 rows for performance).
-3. **Processing:** The CSV is sent via `FormData` to the Express backend.
-4. **AI Extraction:** The Node.js server batches the rows (20 at a time) and sends them to Gemini 2.5 Flash using a strict `responseSchema`. The AI intelligently maps custom columns to our strict schema (handling edge cases like multiple phone numbers by storing overflows in the `crm_note` field).
-5. **Results Display:** The backend returns structured JSON. The frontend renders a beautifully segmented tab view showing **Imported** records and **Skipped** records (with the exact raw JSON and rejection reasoning).
+The system is separated into a Next.js client and a Node.js/Express backend to ensure scalable file handling and secure AI API interactions.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Client (Next.js)
+    participant Server (Express)
+    participant Gemini AI
+    
+    User->>Client: Uploads CSV via Drag & Drop
+    Client->>Client: Parses locally (PapaParse) & renders Preview Table
+    User->>Client: Clicks "Process with AI"
+    Client->>Server: POST /api/upload (multipart/form-data)
+    Server->>Server: Parses CSV into JSON Array
+    Server->>Gemini AI: Sends batches (20 rows) + Strict JSON Schema
+    Gemini AI-->>Server: Returns Mapped JSON Array
+    Server->>Server: Validates data (Drops leads with no email/phone)
+    Server-->>Client: Returns { imported, skipped }
+    Client-->>User: Renders Results UI
+```
 
 ---
 
-## 💻 Local Setup
+## 🔌 API Documentation
+
+### `POST /api/upload`
+Accepts a raw CSV file, processes the data through the AI extraction engine, and returns the strictly mapped CRM records.
+
+**Headers:**
+- `Content-Type: multipart/form-data`
+
+**Request Body:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | `File` | The raw CSV file to be processed. |
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "total_imported": 4,
+  "total_skipped": 1,
+  "imported": [
+    {
+      "name": "Sarah Johnson",
+      "email": "sarah.johnson@gmail.com",
+      "country_code": "+91",
+      "mobile_without_country_code": "9876543211",
+      "company": "Tech Solutions",
+      "city": "Bangalore",
+      "crm_status": "GOOD_LEAD_FOLLOW_UP",
+      "data_source": "leads_on_demand"
+    }
+  ],
+  "skipped": [
+    {
+      "Lead Name": "Unknown User",
+      "Remarks": "Missing contact info"
+    }
+  ]
+}
+```
+
+---
+
+## 🧠 AI Implementation Details
+
+This project leverages the official `@google/genai` SDK. To prevent hallucination and ensure 100% reliable system ingestion, the AI is constrained using a **Strict Response Schema**.
+
+1. **Batching:** The server chunks the CSV data into batches of 20 rows. This optimizes context limits and ensures the LLM does not lose track of data formatting.
+2. **Deterministic Output:** The model is invoked with a `temperature` of `0.1` and a `responseSchema` defining the exact data types and enumerations expected by the CRM.
+3. **Smart Consolidation:** Through precise System Instructions, the AI is trained to extract primary contact methods into their dedicated fields, while gracefully moving secondary numbers or random unstructured notes into a `crm_note` string.
+
+---
+
+## 💻 Local Setup & Development
 
 ### Prerequisites
 - Node.js (v18+)
-- A Google Gemini API Key
+- Google Gemini API Key
 
 ### Installation
 
@@ -52,15 +119,10 @@ An intelligent, full-stack CRM data ingestion tool built to effortlessly map mes
    ```
 
 2. **Install all dependencies:**
-   *(We use a monorepo setup, so dependencies need to be installed in both folders)*
+   *(Monorepo setup: dependencies install concurrently)*
    ```bash
-   # Install root dependencies (concurrently)
    npm install
-
-   # Install frontend dependencies
    cd client && npm install
-
-   # Install backend dependencies
    cd ../server && npm install
    ```
 
@@ -76,16 +138,15 @@ An intelligent, full-stack CRM data ingestion tool built to effortlessly map mes
    ```bash
    npm run dev
    ```
-   This will simultaneously start the Next.js frontend on `http://localhost:3000` and the Express backend on `http://localhost:5000`.
+   *Frontend starts on `http://localhost:3000` | Backend starts on `http://localhost:5000`*
 
 ---
 
-## ☁️ Deployment
+## ☁️ Deployment Notes
 
-This project is fully configured for cloud deployment:
-- **Frontend (Vercel):** Connect your repository to Vercel and set the Root Directory to `client`.
-- **Backend (Vercel/Render):** The Express backend is Vercel-ready. `multer` is configured to use the OS `/tmp` directory to comply with read-only serverless filesystems, and a `vercel.json` is included in the `server` folder. Be sure to add your `GEMINI_API_KEY` to the environment variables of your hosting provider!
+This repository is optimized for serverless environments.
+- **Frontend:** Hosted on Vercel. 
+- **Backend:** Configured for Vercel Serverless Functions / Render. The file upload engine (`multer`) is explicitly routed to the OS `/tmp` directory to comply with read-only serverless filesystem constraints.
 
 ---
-
-*Designed and engineered for the GrowEasy technical assignment.*
+*Developed for the GrowEasy Engineering Assignment.*
